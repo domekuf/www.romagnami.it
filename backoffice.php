@@ -1,3 +1,11 @@
+<?php
+if (!isset($_SERVER['PHP_AUTH_USER'])) {
+    header('WWW-Authenticate: Basic realm="My Realm"');
+    header('HTTP/1.0 401 Unauthorized');
+    echo 'Autenticazione non riuscita';
+    exit;
+} elseif($_SERVER['PHP_AUTH_USER']=='romagnami' && $_SERVER['PHP_AUTH_PW']=='igea') {
+?>
 <html>
 <head>
     <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css">
@@ -27,26 +35,47 @@ $prodotti = json_decode($prodotti_json);
 if($_GET != null){
 	//se prendiamo dei parametri in get li salviamo nel json
 	
+	if($_GET['del']!=null){
+
+		$deletekey = $_GET['del'];
+		array_splice($prodotti, $deletekey, 1);
+
+
+	}elseif($_GET['add']!=null){
+		$addkey = $_GET['add'];
+
+
+		$newprd->img = $addkey+1;
+		$newprd->title = '';
+		$newprd->subtitle = '';
+		$newprd->htmlContent = '';
+
+		array_push($prodotti, $newprd);;
+
+	}else{
+
+		$editkey = $_GET['key'];
+		$prodotti[$editkey]->img = $_GET['img'];
+		$prodotti[$editkey]->title = $_GET['title'];
+		$prodotti[$editkey]->subtitle = $_GET['subtitle'];
+		$prodotti[$editkey]->htmlContent = $_GET['htmlContent'];	
 	
-	$editkey = $_GET['key'];
-	$prodotti[$editkey]->img = $_GET['img'];
-	$prodotti[$editkey]->title = $_GET['title'];
-	$prodotti[$editkey]->subtitle = $_GET['subtitle'];
-	$prodotti[$editkey]->htmlContent = $_GET['htmlContent'];
+	}
+	
 
 	$jsonProduct = json_encode($prodotti);
 
-	$newfile = fopen('prodotti/encoded.json', "a");//r+ era a
-	fwrite($newfile, json_encode($jsonProduct), 1048576);
+	$newfile = fopen('prodotti/prodotti.json', "r+");//r+ era a
+	fwrite($newfile, $jsonProduct, 1048576);
 	fclose($newfile);
 
 
 }
 
 
-$prodotti_json = carica_file('prodotti/prodotti.json');
+//$prodotti_json = carica_file('prodotti/prodotti.json');
 
-$prodotti = json_decode($prodotti_json);
+//$prodotti = json_decode($prodotti_json);
 
 ?>
 <h1>Backoffice</h1>
@@ -55,6 +84,7 @@ $prodotti = json_decode($prodotti_json);
 foreach ($prodotti as $key => $p) {
 	?>
 	<h2><?php echo ($p->title)?></h2>
+	<a href="?del=<?php echo ($key)?>">Cancella</a>
 	<form action="backoffice.php" >
 		<input type="hidden" name="key" value="<?php echo ($key) ?>"/>
 		<input type="hidden" name="img" value="<?php echo ($p->img) ?>"/>
@@ -86,8 +116,11 @@ foreach ($prodotti as $key => $p) {
 
 
 	<?php
+
+$nextkey=$key+1;
 }
 ?>
+	<a href="?add=<?php echo ($nextkey)?>">Aggiungi</a>
 
 </div>
 </body>
@@ -97,3 +130,10 @@ foreach ($prodotti as $key => $p) {
 <!-- Bootstrap Core JavaScript -->
 <script src="js/bootstrap.min.js"></script>
 </html>
+<?php
+}else{
+	header('WWW-Authenticate: Basic realm="My Realm"');
+    header('HTTP/1.0 401 Unauthorized');
+    echo 'Autenticazione errata';
+}
+
